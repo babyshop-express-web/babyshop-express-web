@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BabyShop - Pedidos</title>
+<link rel="icon" href="/icon-192.png">
+<link rel="manifest" href="/manifest-pedidos.json">
+<meta name="theme-color" content="#a081b0">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BS Pedidos">
+<style>
+  :root{
+    --purple:#a081b0;
+    --purple-dark:#7d6089;
+    --bg:#f7f5f9;
+    --card-bg:#ffffff;
+    --text:#2c2a2e;
+    --text-secondary:#7a7680;
+    --border:#e8e4ed;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:#e8e4ed;
+    color:var(--text);
+  }
+  #appWrap{
+    max-width:520px;
+    margin:0 auto;
+    background:var(--bg);
+    min-height:100vh;
+    box-shadow:0 0 30px rgba(0,0,0,0.08);
+  }
+  header{
+    background:var(--purple);
+    padding:18px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    position:sticky;
+    top:0;
+    z-index:10;
+  }
+  header h1{color:#fff;font-size:19px;font-weight:700;}
+  .refresh-info{color:#f3eef7;font-size:11px;}
+
+  #loginScreen{
+    padding:60px 30px;
+    text-align:center;
+  }
+  #loginScreen input{
+    width:100%;
+    padding:14px;
+    font-size:22px;
+    text-align:center;
+    letter-spacing:8px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    margin-bottom:16px;
+  }
+  #loginScreen button{
+    width:100%;
+    background:var(--purple);
+    color:#fff;
+    border:none;
+    border-radius:12px;
+    padding:14px;
+    font-size:15px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  #loginError{color:#c62828;font-size:13px;margin-top:10px;}
+
+  #panel{display:none;padding:16px;}
+
+  .pedido-card{
+    background:var(--card-bg);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:16px;
+    margin-bottom:14px;
+  }
+  .pedido-card.nuevo{
+    border:2px solid #2e7d32;
+    background:#f1f8f1;
+  }
+  .pedido-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:8px;
+  }
+  .pedido-id{font-size:15px;font-weight:700;color:var(--purple-dark);}
+  .pedido-fecha{font-size:11px;color:var(--text-secondary);}
+  .pedido-cliente{font-size:14px;font-weight:600;margin-bottom:2px;}
+  .pedido-detalle{font-size:12px;color:var(--text-secondary);margin-bottom:2px;}
+  .pedido-productos{
+    font-size:12px;
+    background:#f7f5f9;
+    border-radius:8px;
+    padding:8px 10px;
+    margin:8px 0;
+  }
+  .pedido-total{font-size:16px;font-weight:700;margin:8px 0;}
+  .pedido-footer{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    margin-top:10px;
+  }
+  select.estado-select{
+    flex:1;
+    padding:8px 10px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    font-size:13px;
+    font-weight:600;
+  }
+  .badge-pago{
+    display:inline-block;
+    font-size:10px;
+    font-weight:700;
+    padding:3px 8px;
+    border-radius:6px;
+    margin-bottom:6px;
+  }
+  .badge-efectivo{background:#e8f5e9;color:#1b5e20;}
+  .badge-transferencia{background:#e3f2fd;color:#0d47a1;}
+  .badge-debito{background:#eeedfe;color:#3c3489;}
+  .comprobante-link{font-size:12px;color:var(--purple);text-decoration:underline;}
+  .empty{padding:60px 20px;text-align:center;color:var(--text-secondary);font-size:14px;}
+</style>
+</head>
+<body>
+
+<div id="appWrap">
+<header>
+  <h1>Pedidos BabyShop</h1>
+  <span onclick="instalarAppPedidos()" style="color:#fff;font-size:12px;text-decoration:underline;cursor:pointer;">Instalar</span>
+</header>
+
+<div style="text-align:right;padding:4px 16px 0;">
+  <span class="refresh-info" id="refreshInfo"></span>
+</div>
+
+<div id="loginScreen">
+  <p style="margin-bottom:16px;color:var(--text-secondary);">Ingresa el PIN para ver los pedidos</p>
+  <input type="password" id="inpPin" inputmode="numeric" maxlength="4" placeholder="----">
+  <button onclick="entrarConPin()">Entrar</button>
+  <div id="loginError"></div>
+</div>
+
+<div id="panel">
+  <div style="padding:16px 16px 0;">
+    <button onclick="togglePromoForm()" style="width:100%;background:var(--purple);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:14px;">Enviar promo a todos</button>
+  </div>
+
+  <div id="promoForm" style="display:none;background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:16px;margin:0 16px 16px;">
+    <input type="text" id="inpPromoTitulo" placeholder="Titulo (ej: Promo del finde!)" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;font-size:14px;">
+    <textarea id="inpPromoMensaje" placeholder="Mensaje (ej: 15% off en toallitas hasta el domingo)" rows="3" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;font-size:14px;resize:vertical;"></textarea>
+    <button onclick="enviarPromo()" style="width:100%;background:#2e7d32;color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">Enviar ahora</button>
+    <div id="promoStatus" style="font-size:12px;margin-top:8px;text-align:center;"></div>
+  </div>
+
+  <div id="listaPedidos"></div>
+</div>
+</div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbw1X1GlUz7e33VuiNk2SnViQ7dwqAmEaJgGxOJhzOyz_3s0rHyeCrNxKJFI638YubWI/exec';
+let pinActual = '';
+let idsVistos = null;
+let intervaloRefresco = null;
+
+const NOMBRES_ESTADO = {
+  'PAGO RECIBIDO': 'Pago recibido',
+  'EN PREPARACION': 'En preparacion',
+  'EN VIAJE': 'En viaje',
+  'ENTREGADO': 'Entregado'
+};
+
+function apiGet(action, params){
+  params = params || {};
+  let url = API_URL + '?action=' + encodeURIComponent(action);
+  Object.keys(params).forEach(function(k){
+    url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+  });
+  return fetch(url).then(function(r){ return r.json(); });
+}
+
+function apiPost(action, data){
+  const body = Object.assign({ action: action }, data);
+  return fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body)
+  }).then(function(r){ return r.json(); });
+}
+
+function entrarConPin(){
+  const pin = document.getElementById('inpPin').value.trim();
+  const error = document.getElementById('loginError');
+  error.innerText = 'Verificando...';
+
+  apiGet('getPedidosRecientes', { pin: pin }).then(function(res){
+    if(res.error){
+      error.innerText = 'PIN incorrecto';
+      return;
+    }
+    pinActual = pin;
+    sessionStorage.setItem('babyshop_admin_pin', pin);
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('panel').style.display = 'block';
+    idsVistos = new Set(res.map(function(p){ return p.idPedido; }));
+    renderPedidos(res, false);
+    iniciarRefresco();
+  }).catch(function(err){
+    error.innerText = 'Error de conexion, intenta de nuevo';
+    console.error(err);
+  });
+}
+
+function iniciarRefresco(){
+  if(intervaloRefresco) clearInterval(intervaloRefresco);
+  intervaloRefresco = setInterval(cargarPedidos, 25000);
+}
+
+function cargarPedidos(){
+  apiGet('getPedidosRecientes', { pin: pinActual }).then(function(res){
+    if(res.error) return;
+
+    const idsNuevos = res.filter(function(p){ return !idsVistos.has(p.idPedido); });
+    if(idsNuevos.length > 0){
+      sonarAlarma();
+      idsNuevos.forEach(function(p){ idsVistos.add(p.idPedido); });
+    }
+
+    renderPedidos(res, idsNuevos.map(function(p){ return p.idPedido; }));
+    document.getElementById('refreshInfo').innerText = 'Actualizado ' + new Date().toLocaleTimeString('es-AR');
+  }).catch(function(err){ console.error(err); });
+}
+
+function sonarAlarma(){
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 0.25, 0.5].forEach(function(t){
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 880;
+      gain.gain.value = 0.2;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + t);
+      osc.stop(ctx.currentTime + t + 0.2);
+    });
+  } catch(e){ console.error(e); }
+
+  if('Notification' in window){
+    if(Notification.permission === 'granted'){
+      new Notification('Nuevo pedido en BabyShop Express');
+    } else if(Notification.permission !== 'denied'){
+      Notification.requestPermission();
+    }
+  }
+}
+
+// Convierte el telefono tal cual lo escribio el cliente (ej: 3471620422)
+// al formato que necesita wa.me (ej: 5493471620422).
+function telefonoWhatsapp(tel){
+  let limpio = (tel || '').toString().replace(/\D/g, '');
+  if(limpio.indexOf('54') !== 0){
+    limpio = '549' + limpio;
+  }
+  return limpio;
+}
+
+function renderPedidos(pedidos, idsNuevos){
+  const cont = document.getElementById('listaPedidos');
+  if(pedidos.length === 0){
+    cont.innerHTML = '<div class="empty">Todavia no hay pedidos.</div>';
+    return;
+  }
+
+  cont.innerHTML = pedidos.map(function(p){
+    const esNuevo = idsNuevos && idsNuevos.indexOf(p.idPedido) > -1;
+    let badgePago = '<span class="badge-pago badge-efectivo">EFECTIVO</span>';
+    if(p.formaPago === 'DEBITO'){
+      badgePago = '<span class="badge-pago badge-debito">DEBITO</span>';
+    } else if(p.formaPago === 'TRANSFERENCIA'){
+      badgePago = '<span class="badge-pago badge-transferencia">TRANSFERENCIA</span>';
+    }
+
+    const opciones = Object.keys(NOMBRES_ESTADO).map(function(key){
+      const selected = p.estado === key ? 'selected' : '';
+      return '<option value="' + key + '" ' + selected + '>' + NOMBRES_ESTADO[key] + '</option>';
+    }).join('');
+
+    const comprobanteHtml = p.comprobante
+      ? '<div style="margin-top:6px;"><a class="comprobante-link" href="' + p.comprobante + '" target="_blank">Ver comprobante</a></div>'
+      : '';
+
+    return '<div class="pedido-card' + (esNuevo ? ' nuevo' : '') + '">' +
+      '<div class="pedido-top">' +
+      '<span class="pedido-id">#' + p.idPedido + '</span>' +
+      '<span class="pedido-fecha">' + p.fecha + '</span>' +
+      '</div>' +
+      badgePago +
+      '<div class="pedido-cliente">' + p.cliente + '</div>' +
+      '<div class="pedido-detalle">Tel: <a href="https://wa.me/' + telefonoWhatsapp(p.telefono) + '" target="_blank" style="color:var(--purple-dark);text-decoration:underline;">' + p.telefono + '</a>' + (p.email ? (' | ' + p.email) : '') + '</div>' +
+      '<div class="pedido-detalle">' + p.direccion + '</div>' +
+      '<div class="pedido-productos">' + (p.productos || '').split(' | ').join('<br>') + '</div>' +
+      '<div class="pedido-total">Total: $' + Number(p.total).toLocaleString('es-AR') + '</div>' +
+      comprobanteHtml +
+      '<div class="pedido-footer">' +
+      '<select class="estado-select" data-id="' + p.idPedido + '" onchange="cambiarEstado(this.getAttribute(\'data-id\'), this.value)">' + opciones + '</select>' +
+      '</div>' +
+      '</div>';
+  }).join('');
+}
+
+function togglePromoForm(){
+  const form = document.getElementById('promoForm');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function enviarPromo(){
+  const titulo = document.getElementById('inpPromoTitulo').value.trim();
+  const mensaje = document.getElementById('inpPromoMensaje').value.trim();
+  const status = document.getElementById('promoStatus');
+
+  if(!titulo || !mensaje){
+    status.style.color = '#c62828';
+    status.innerText = 'Completa el titulo y el mensaje';
+    return;
+  }
+
+  status.style.color = 'var(--text-secondary)';
+  status.innerText = 'Enviando...';
+
+  apiPost('enviarNotificacionPush', { pin: pinActual, titulo: titulo, mensaje: mensaje })
+    .then(function(res){
+      if(res.ok){
+        status.style.color = '#2e7d32';
+        status.innerText = 'Enviada a ' + (res.recipients || 0) + ' suscriptos!';
+        document.getElementById('inpPromoTitulo').value = '';
+        document.getElementById('inpPromoMensaje').value = '';
+      } else {
+        status.style.color = '#c62828';
+        status.innerText = 'Error: ' + (res.error || 'No se pudo enviar');
+      }
+    })
+    .catch(function(err){
+      status.style.color = '#c62828';
+      status.innerText = 'Error de conexion';
+      console.error(err);
+    });
+}
+
+function cambiarEstado(idPedido, nuevoEstado){
+  apiPost('actualizarEstadoPedido', { pin: pinActual, idPedido: idPedido, nuevoEstado: nuevoEstado })
+    .then(function(res){
+      if(!res.ok){
+        alert('No se pudo actualizar: ' + (res.error || ''));
+      }
+    })
+    .catch(function(err){ console.error(err); });
+}
+
+const pinGuardado = sessionStorage.getItem('babyshop_admin_pin');
+if(pinGuardado){
+  document.getElementById('inpPin').value = pinGuardado;
+  entrarConPin();
+}
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/OneSignalSDKWorker.js').catch(function(err){
+    console.error('No se pudo registrar el service worker:', err);
+  });
+}
+
+let deferredInstallPromptPedidos = null;
+
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();
+  deferredInstallPromptPedidos = e;
+});
+
+function instalarAppPedidos(){
+  if(deferredInstallPromptPedidos){
+    deferredInstallPromptPedidos.prompt();
+    deferredInstallPromptPedidos.userChoice.then(function(){
+      deferredInstallPromptPedidos = null;
+    });
+  } else {
+    alert('Ya esta instalada, o tu navegador no lo permite ahora');
+  }
+}
+</script>
+
+</body>
+</html>
