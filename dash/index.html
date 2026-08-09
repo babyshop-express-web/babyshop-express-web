@@ -1,16 +1,21 @@
 <!DOCTYPE html>
-  <html lang="es">
-  <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dashboard BABYSHOP</title>
-  <style>
-    html, body { margin:0; padding:0; height:100%; overflow:hidden; }
-  iframe { border:0; width:100%; height:100vh; display:block; }
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard BABYSHOP</title>
+<style>
+html, body { margin:0; padding:0; height:100%; overflow:hidden; }
+iframe { border:0; width:100%; height:100vh; display:block; }
 </style>
-  </head>
-  <body>
-  <iframe src="https://script.google.com/macros/s/AKfycbzmScweY-MLs3-fSf6iw8AqCTHSZTuP_dDNXSc88F8jZDLQbOfV20a6SSyTUc3S8f4/exec?view=dashboard" allowfullscreen></iframe>
-  </body>
-  </html>
-  
+</head>
+<body>
+<iframe id="dashFrame" allowfullscreen></iframe>
+<script>
+var params = new URLSearchParams(window.location.search);
+var pagina = params.get('pagina') || 'dashboard';
+var base = 'https://script.google.com/macros/s/AKfycbzmScweY-MLs3-fSf6iw8AqCTHSZTuP_dDNXSc88F8jZDLQbOfV20a6SSyTUc3S8f4/exec';
+document.getElementById('dashFrame').src = base + '?pagina=' + encodeURIComponent(pagina);
+</script>
+</body>
+</html>
