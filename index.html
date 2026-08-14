@@ -723,9 +723,9 @@ function productCardHtml(p){
 
   let badge = '';
   if(p.stockBadge === 'ULTIMA_UNIDAD'){
-    badge = '<div style="position:absolute;top:6px;left:6px;background:#c62828;color:#fff;font-size:9px;font-weight:700;padding:3px 6px;border-radius:6px;">ULTIMA UNIDAD</div>';
+    badge = '<div style="position:absolute;top:6px;left:6px;background:linear-gradient(135deg,#e53935,#c62828);color:#fff;font-size:10px;font-weight:800;padding:4px 8px;border-radius:20px;box-shadow:0 2px 6px rgba(198,40,40,0.5);display:flex;align-items:center;gap:3px;">🔥 ULTIMA UNIDAD</div>';
   } else if(p.stockBadge === 'ULTIMAS_DISPONIBLES'){
-    badge = '<div style="position:absolute;top:6px;left:6px;background:#e65100;color:#fff;font-size:9px;font-weight:700;padding:3px 6px;border-radius:6px;">ULTIMAS 2 UNIDADES</div>';
+    badge = '<div style="position:absolute;top:6px;left:6px;background:linear-gradient(135deg,#fb8c00,#e65100);color:#fff;font-size:10px;font-weight:800;padding:4px 8px;border-radius:20px;box-shadow:0 2px 6px rgba(230,81,0,0.5);display:flex;align-items:center;gap:3px;">🔥 ULTIMAS 2 UNIDADES</div>';
   }
 
   return '<div class="product-card" style="position:relative;">' +
@@ -1165,3 +1165,4 @@ if(esAppInstalada()){
 
 </body>
 </html>
+
