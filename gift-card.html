@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gift Card - BabyShop Express</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: sans-serif;
+    background: #FBEAF0;
+    color: #362A3F;
+  }
+  .wrap { max-width: 420px; margin: 0 auto; padding: 1rem; }
+  header { text-align: center; padding: 0.5rem 0 0.25rem; }
+  header img { max-width: 200px; height: auto; }
+  header p { color: #993556; margin: 8px 0 0; font-size: 14px; font-weight: 600; }
+
+  .card-preview {
+    background: #A081B0;
+    border-radius: 18px;
+    padding: 22px 20px;
+    color: #fff;
+    margin: 0.75rem 0;
+    position: relative;
+    overflow: hidden;
+    min-height: 110px;
+  }
+  .card-preview .blob {
+    position: absolute; top: -14px; right: -14px;
+    width: 70px; height: 70px; background: #F2A6C2;
+    border-radius: 50%; opacity: 0.4;
+  }
+  .card-preview .rel { position: relative; }
+  .card-preview .tag { font-size: 12px; letter-spacing: 1px; opacity: 0.85; }
+  .card-preview .monto { font-size: 30px; font-weight: 700; margin: 20px 0 4px; }
+  .card-preview .para { font-size: 13px; opacity: 0.9; }
+
+  section.block {
+    margin-top: 1.25rem;
+  }
+  section.block > p.label {
+    font-size: 13px; color: #993556; font-weight: 600; margin: 0 0 8px;
+  }
+  .amounts {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
+  .amounts button {
+    border: none; background: #EEEDFE; color: #3C3489;
+    font-weight: 600; padding: 14px 0; border-radius: 12px;
+    font-size: 15px; cursor: pointer;
+  }
+  .amounts button.selected {
+    border: 2px solid #A081B0; background: #F4C0D1; color: #72243E;
+  }
+
+  .white-box {
+    background: #fff; border-radius: 14px; padding: 14px; margin-top: 0.75rem;
+  }
+  .white-box input, .white-box textarea {
+    width: 100%; margin-bottom: 8px; border-radius: 10px;
+    border: 1px solid #E3D3E6; padding: 10px 12px; font-size: 14px;
+    font-family: inherit;
+  }
+  .white-box textarea { min-height: 60px; resize: vertical; }
+
+  .pay-box {
+    background: #EFE7F4; border-radius: 14px; padding: 1rem; margin-top: 0.75rem;
+  }
+  .pay-box .row {
+    display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px;
+  }
+  .pay-box .row span:first-child { color: #3C3489; }
+  .pay-box .row span:last-child { font-weight: 700; color: #26215C; }
+  .pay-box .note { font-size: 12px; color: #534AB7; margin: 4px 0 0; }
+  .pay-box .transfer-info {
+    margin-top: 12px; background: #fff; border-radius: 10px; padding: 12px;
+    font-size: 14px;
+  }
+  .pay-box .transfer-info img { height: 20px; vertical-align: middle; margin-bottom: 6px; }
+
+  .btn-submit {
+    width: 100%; margin-top: 1rem; background: #A081B0; color: #fff;
+    border: none; padding: 13px 0; font-weight: 700; border-radius: 14px;
+    font-size: 15px; cursor: pointer;
+  }
+  .btn-submit:disabled { opacity: 0.6; }
+
+  #msg { text-align: center; font-size: 14px; margin-top: 10px; min-height: 20px; }
+  #msg.error { color: #C0304C; }
+  #msg.success { color: #2E7D32; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <img src="https://lh3.googleusercontent.com/d/1WF7NldSDVLgjBWz10FPkuePVs8gfNMYm" alt="BabyShop">
+    <p>Regalá una Gift Card</p>
+  </header>
+
+  <div class="card-preview">
+    <div class="blob"></div>
+    <div class="rel">
+      <div class="tag">TARJETA DE REGALO</div>
+      <div class="monto" id="previewMonto">$ 0</div>
+      <div class="para" id="previewPara">Para: -</div>
+    </div>
+  </div>
+
+  <section class="block">
+    <p class="label">Elegí un monto</p>
+    <div class="amounts">
+      <button type="button" data-monto="10000" onclick="elegirMonto(10000)">$10.000</button>
+      <button type="button" data-monto="25000" onclick="elegirMonto(25000)">$25.000</button>
+      <button type="button" data-monto="50000" onclick="elegirMonto(50000)">$50.000</button>
+      <button type="button" data-monto="75000" onclick="elegirMonto(75000)">$75.000</button>
+    </div>
+  </section>
+
+  <div class="white-box">
+    <p class="label">Para quién es</p>
+    <input type="text" id="destinatario" placeholder="Nombre del destinatario" oninput="actualizarPreview()">
+    <input type="tel" id="telDestinatario" placeholder="WhatsApp del destinatario (ej: 3471317127)">
+    <textarea id="mensaje" placeholder="Mensaje (opcional): ¡Feliz cumple!"></textarea>
+  </div>
+
+  <div class="white-box">
+    <p class="label">Tus datos</p>
+    <input type="text" id="comprador" placeholder="Tu nombre">
+    <input type="tel" id="telComprador" placeholder="Tu WhatsApp">
+  </div>
+
+  <div class="pay-box">
+    <div class="row"><span>Total a transferir</span><span id="totalPagar">$0</span></div>
+    <p class="note">Sin descuento por transferencia</p>
+    <div class="transfer-info">
+      <img src="/mercadopago-logo.png" alt="Mercado Pago"><br>
+      Transferí a este alias de Mercado Pago: <b>BABY.SHOP.CDG</b><br>
+      A nombre de: Georgina Ciccioli
+    </div>
+    <div class="white-box" style="margin-top:12px;padding:12px">
+      <p class="label" style="margin-bottom:6px">Adjuntá el comprobante para poder confirmar el pedido</p>
+      <input type="file" id="inpComprobante" accept="image/*,application/pdf">
+    </div>
+  </div>
+
+  <button class="btn-submit" id="btnEnviar" onclick="enviarCompra()">Continuar con la compra</button>
+  <div id="msg"></div>
+
+</div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbzmScweY-MLs3-fSf6iw8AqCTHSZTuP_dDNXSc88F8jZDLQbOfV20a6SSyTUc3S8f4/exec';
+let montoElegido = 0;
+
+function formatPrecio(n) {
+  return '$' + Number(n).toLocaleString('es-AR');
+}
+
+function elegirMonto(m) {
+  montoElegido = m;
+  document.querySelectorAll('.amounts button').forEach(function(btn) {
+    btn.classList.toggle('selected', Number(btn.dataset.monto) === m);
+  });
+  actualizarPreview();
+}
+
+function actualizarPreview() {
+  document.getElementById('previewMonto').textContent = formatPrecio(montoElegido);
+  const dest = document.getElementById('destinatario').value.trim();
+  document.getElementById('previewPara').textContent = 'Para: ' + (dest || '-');
+  document.getElementById('totalPagar').textContent = formatPrecio(montoElegido);
+}
+
+function fileToBase64(file) {
+  return new Promise(function(resolve, reject) {
+    const reader = new FileReader();
+    reader.onload = function() { resolve(reader.result.split(',')[1]); };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function enviarCompra() {
+  const msg = document.getElementById('msg');
+  msg.className = '';
+  msg.textContent = '';
+
+  if (!montoElegido) { msg.className = 'error'; msg.textContent = 'Elegí un monto primero.'; return; }
+  const destinatario = document.getElementById('destinatario').value.trim();
+  const telDestinatario = document.getElementById('telDestinatario').value.trim();
+  const comprador = document.getElementById('comprador').value.trim();
+  const telComprador = document.getElementById('telComprador').value.trim();
+  const mensaje = document.getElementById('mensaje').value.trim();
+  const fileInput = document.getElementById('inpComprobante');
+
+  if (!destinatario || !telDestinatario) { msg.className = 'error'; msg.textContent = 'Completá el nombre y WhatsApp del destinatario.'; return; }
+  if (!comprador || !telComprador) { msg.className = 'error'; msg.textContent = 'Completá tus datos.'; return; }
+  if (!fileInput.files.length) { msg.className = 'error'; msg.textContent = 'Adjuntá el comprobante de pago.'; return; }
+
+  const btn = document.getElementById('btnEnviar');
+  btn.disabled = true;
+  msg.textContent = 'Enviando...';
+
+  try {
+    const base64Data = await fileToBase64(fileInput.files[0]);
+    const datos = {
+      monto: montoElegido,
+      comprador: comprador,
+      telComprador: telComprador,
+      destinatario: destinatario,
+      telDestinatario: telDestinatario,
+      mensaje: mensaje,
+      comprobanteBase64: base64Data,
+      comprobanteMimeType: fileInput.files[0].type
+    };
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'comprarGiftCard', datos: datos })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      msg.className = 'success';
+      msg.textContent = '¡Listo! Recibimos tu compra, en breve confirmamos el pago.';
+      btn.style.display = 'none';
+    } else {
+      msg.className = 'error';
+      msg.textContent = data.error || 'No se pudo procesar la compra.';
+      btn.disabled = false;
+    }
+  } catch (err) {
+    msg.className = 'error';
+    msg.textContent = 'Error de conexión. Probá de nuevo.';
+    btn.disabled = false;
+  }
+}
+
+elegirMonto(10000);
+</script>
+</body>
+</html>
+
