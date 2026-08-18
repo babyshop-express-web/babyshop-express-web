@@ -118,6 +118,17 @@ border:1px solid var(--border);
 font-size:13px;
 font-weight:600;
 }
+.btn-gift-wa{
+background:#25D366;
+color:#fff;
+border:none;
+border-radius:8px;
+padding:8px 12px;
+margin-left:8px;
+font-size:13px;
+font-weight:600;
+cursor:pointer;
+}
 .badge-pago{
 display:inline-block;
 font-size:10px;
@@ -316,8 +327,111 @@ badgePago +
 comprobanteHtml +
 '<div class="pedido-footer">' +
 '<select class="estado-select" data-id="' + p.idPedido + '" onchange="cambiarEstado(this.getAttribute(\'data-id\'), this.value)">' + opciones + '</select>' +
+(((p.productos || '').indexOf('GIFT CARD') !== -1) ? ('<button class="btn-gift-wa" onclick="enviarGiftCardWhatsApp(\'' + p.idPedido + '\')">Enviar WhatsApp</button>') : '') +
 '</div>' +
 '</div>';
+
+function enviarGiftCardWhatsApp(idPedido) {
+apiPost('obtenerGiftCardPorPedido', { pin: pinActual, idPedido: idPedido })
+.then(function(res) {
+if (!res.ok) {
+alert('No se pudo obtener la gift card: ' + (res.error || ''));
+return;
+}
+var link = 'https://babyshop.ar/gift-card-view.html?codigo=' + encodeURIComponent(res.codigo);
+var mensaje = 'Hola ' + res.destinatario + '! Te regalaron una Gift Card de BabyShop de 
+}).join('');
+}
+
+function togglePromoForm(){
+const form = document.getElementById('promoForm');
+form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function enviarPromo(){
+const titulo = document.getElementById('inpPromoTitulo').value.trim();
+const mensaje = document.getElementById('inpPromoMensaje').value.trim();
+const status = document.getElementById('promoStatus');
+
+if(!titulo || !mensaje){
+status.style.color = '#c62828';
+status.innerText = 'Completa el titulo y el mensaje';
+return;
+}
+
+status.style.color = 'var(--text-secondary)';
+status.innerText = 'Enviando...';
+
+apiPost('enviarNotificacionPush', { pin: pinActual, titulo: titulo, mensaje: mensaje })
+.then(function(res){
+if(res.ok){
+status.style.color = '#2e7d32';
+status.innerText = 'Enviada a ' + (res.recipients || 0) + ' suscriptos!';
+document.getElementById('inpPromoTitulo').value = '';
+document.getElementById('inpPromoMensaje').value = '';
+} else {
+status.style.color = '#c62828';
+status.innerText = 'Error: ' + (res.error || 'No se pudo enviar');
+}
+})
+.catch(function(err){
+status.style.color = '#c62828';
+status.innerText = 'Error de conexion';
+console.error(err);
+});
+}
+
+function cambiarEstado(idPedido, nuevoEstado){
+apiPost('actualizarEstadoPedido', { pin: pinActual, idPedido: idPedido, nuevoEstado: nuevoEstado })
+.then(function(res){
+if(!res.ok){
+alert('No se pudo actualizar: ' + (res.error || ''));
+}
+})
+.catch(function(err){ console.error(err); });
+}
+
+const pinGuardado = sessionStorage.getItem('babyshop_admin_pin');
+if(pinGuardado){
+document.getElementById('inpPin').value = pinGuardado;
+entrarConPin();
+}
+
+if('serviceWorker' in navigator){
+navigator.serviceWorker.register('/OneSignalSDKWorker.js').catch(function(err){
+console.error('No se pudo registrar el service worker:', err);
+});
+}
+
+let deferredInstallPromptPedidos = null;
+
+window.addEventListener('beforeinstallprompt', function(e){
+e.preventDefault();
+deferredInstallPromptPedidos = e;
+});
+
+function instalarAppPedidos(){
+if(deferredInstallPromptPedidos){
+deferredInstallPromptPedidos.prompt();
+deferredInstallPromptPedidos.userChoice.then(function(){
+deferredInstallPromptPedidos = null;
+});
+} else {
+alert('Ya esta instalada, o tu navegador no lo permite ahora');
+}
+}
+</script>
+
+</body>
+</html>
+ + Number(res.monto).toLocaleString('es-AR') + '. Mirala aca: ' + link;
+if (res.mensaje) mensaje += ' \u2014 ' + res.mensaje;
+var telLimpio = String(res.telDestinatario || '').replace(/\D/g, '');
+var telWa = telLimpio.indexOf('54') === 0 ? telLimpio : '549' + telLimpio;
+window.open('https://wa.me/' + telWa + '?text=' + encodeURIComponent(mensaje), '_blank');
+})
+.catch(function(err) { console.error(err); alert('Error de conexion.'); });
+}
 }).join('');
 }
 
