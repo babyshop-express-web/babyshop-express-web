@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tu Gift Card - BabyShop</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: sans-serif;
+    background: #FBEAF0;
+    color: #362A3F;
+  }
+  .wrap { max-width: 420px; margin: 0 auto; padding: 1.25rem; }
+  header { text-align: center; padding: 0.5rem 0 0.5rem; }
+  header img { max-width: 190px; height: auto; }
+
+  .card {
+    background: #A081B0;
+    border-radius: 20px;
+    padding: 26px 22px;
+    color: #fff;
+    margin: 1rem 0;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+  }
+  .card .blob1 {
+    position: absolute; top: -20px; right: -20px;
+    width: 90px; height: 90px; background: #F2A6C2;
+    border-radius: 50%; opacity: 0.4;
+  }
+  .card .blob2 {
+    position: absolute; bottom: -24px; left: -24px;
+    width: 80px; height: 80px; background: #FAEEDA;
+    border-radius: 50%; opacity: 0.25;
+  }
+  .card .rel { position: relative; }
+  .card .tag { font-size: 13px; letter-spacing: 1px; opacity: 0.85; }
+  .card .monto { font-size: 38px; font-weight: 700; margin: 16px 0 8px; }
+  .card .para { font-size: 15px; opacity: 0.95; }
+  .card .mensaje {
+    margin-top: 14px; font-size: 14px; font-style: italic;
+    opacity: 0.9; padding: 0 8px;
+  }
+
+  .qr-box {
+    background: #fff; border-radius: 18px; padding: 1.25rem;
+    text-align: center; margin-top: 0.5rem;
+  }
+  .qr-box img { width: 180px; height: 180px; }
+  .qr-box .codigo {
+    margin-top: 10px; font-size: 15px; font-weight: 700;
+    letter-spacing: 1px; color: #6F5182;
+  }
+  .qr-box .tip {
+    margin-top: 10px; font-size: 13px; color: #993556;
+  }
+
+  .estado-agotada {
+    text-align: center; margin-top: 1rem; padding: 1rem;
+    background: #FDECEA; border-radius: 14px; color: #A83232;
+    font-weight: 600; font-size: 14px;
+  }
+
+  #loading { text-align: center; padding: 3rem 0; color: #993556; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="https://lh3.googleusercontent.com/d/1WF7NldSDVLgjBWz10FPkuePVs8gfNMYm" alt="BabyShop">
+  </header>
+
+  <div id="loading">Cargando tu gift card...</div>
+  <div id="contenido" style="display:none">
+    <div class="card">
+      <div class="blob1"></div>
+      <div class="blob2"></div>
+      <div class="rel">
+        <div class="tag">TARJETA DE REGALO</div>
+        <div class="monto" id="monto">$0</div>
+        <div class="para" id="para">Para: -</div>
+        <div class="mensaje" id="mensaje" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="qr-box" id="qrBox">
+      <img id="qrImg" src="" alt="Código QR">
+      <div class="codigo" id="codigoTexto"></div>
+      <div class="tip">Mostrá este QR o código en el local de BabyShop para canjearlo</div>
+    </div>
+
+    <div class="estado-agotada" id="agotada" style="display:none">
+      Esta gift card ya fue utilizada.
+    </div>
+  </div>
+</div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbzmScweY-MLs3-fSf6iw8AqCTHSZTuP_dDNXSc88F8jZDLQbOfV20a6SSyTUc3S8f4/exec';
+
+function formatPrecio(n) {
+  return '$' + Number(n).toLocaleString('es-AR');
+}
+
+function getParam(name) {
+  return new URLSearchParams(window.location.search).get(name);
+}
+
+async function cargar() {
+  const codigo = getParam('codigo');
+  const loading = document.getElementById('loading');
+  if (!codigo) {
+    loading.textContent = 'Falta el código de la gift card en el link.';
+    return;
+  }
+  try {
+    const res = await fetch(API_URL + '?action=consultarGiftCard&codigo=' + encodeURIComponent(codigo));
+    const data = await res.json();
+    if (!data.ok) {
+      loading.textContent = 'No encontramos esa gift card.';
+      return;
+    }
+    loading.style.display = 'none';
+    document.getElementById('contenido').style.display = 'block';
+    document.getElementById('monto').textContent = formatPrecio(data.saldo);
+    document.getElementById('para').textContent = 'Para: ' + (data.destinatario || '-');
+    if (data.mensaje) {
+      const m = document.getElementById('mensaje');
+      m.textContent = '"' + data.mensaje + '"';
+      m.style.display = 'block';
+    }
+    document.getElementById('codigoTexto').textContent = data.codigo;
+    document.getElementById('qrImg').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(data.codigo);
+
+    if (data.estado !== 'Activa') {
+      document.getElementById('qrBox').style.display = 'none';
+      document.getElementById('agotada').style.display = 'block';
+    }
+  } catch (err) {
+    loading.textContent = 'Error al cargar la gift card. Probá de nuevo.';
+  }
+}
+
+cargar();
+</script>
+</body>
+</html>
+
