@@ -320,26 +320,28 @@ comprobanteHtml +
 (((p.productos || '').indexOf('GIFT CARD') !== -1) ? ('<button class="btn-gift-wa" onclick="enviarGiftCardWhatsApp(\'' + p.idPedido + '\')">Enviar WhatsApp</button>') : '') +
 '</div>' +
 '</div>';
+}).join('');
+}
 
 function enviarGiftCardWhatsApp(idPedido) {
 var winRef = window.open('', '_blank');
 apiPost('obtenerGiftCardPorPedido', { pin: pinActual, idPedido: idPedido })
 .then(function(res) {
 if (!res.ok) {
-if (winRef) winRef.close();
+if (winRef) { winRef.close(); }
 alert('No se pudo obtener la gift card: ' + (res.error || ''));
 return;
 }
 var link = 'https://babyshop.ar/gift-card-view.html?codigo=' + encodeURIComponent(res.codigo);
 var monto = Number(res.monto).toLocaleString('es-AR');
 var mensaje = 'Hola ' + res.destinatario + '! Te regalaron una Gift Card de BabyShop de $' + monto + '. Mirala aca: ' + link;
-if (res.mensaje) mensaje += ' - ' + res.mensaje;
+if (res.mensaje) { mensaje += ' - ' + res.mensaje; }
 var telLimpio = String(res.telDestinatario || '').replace(/\D/g, '');
 var telWa = telLimpio.indexOf('54') === 0 ? telLimpio : '549' + telLimpio;
 var waUrl = 'https://wa.me/' + telWa + '?text=' + encodeURIComponent(mensaje);
 if (winRef) { winRef.location.href = waUrl; } else { window.open(waUrl, '_blank'); }
 })
-.catch(function(err) { console.error(err); if (winRef) winRef.close(); alert('Error de conexion.'); });
+.catch(function(err) { console.error(err); if (winRef) { winRef.close(); } alert('Error de conexion.'); });
 }
 
 function togglePromoForm(){
