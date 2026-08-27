@@ -434,7 +434,7 @@ let categoriaActiva = null;
 
 function mensajeEntrega(){
   const ahora = new Date();
-  const hora = ahora.getHours();
+  const hora = ahora.getHours(); const min = ahora.getMinutes();
   const dia = ahora.getDay(); // 0 domingo, 6 sabado
   if(dia === 0 || dia === 6){
     return 'Los pedidos se entregan de lunes a viernes.';
@@ -442,8 +442,8 @@ function mensajeEntrega(){
   if(hora < 9){
     return 'Pedis antes de las 9hs y lo recibis HOY en el turno mañana (10 a 12hs).';
   }
-  if(hora < 16){
-    return 'Pedis antes de las 16hs y lo recibis HOY en el turno tarde (17 a 19hs).';
+  if(hora < 18 || (hora === 18 && min <= 45)){
+    return 'Pedis antes de las 18:45hs y lo recibis HOY en el turno tarde (17 a 19hs).';
   }
   return 'Ya paso el horario de hoy, tu pedido se entrega el proximo dia habil.';
 }
