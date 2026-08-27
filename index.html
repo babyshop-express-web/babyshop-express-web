@@ -206,7 +206,7 @@
 
 <div class="greeting">Hola. Que necesitas hoy?</div>
 <div style="margin:0 20px 10px;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;padding:8px 12px;font-size:15px;color:#1b5e20;">
-  Efectivo o transferencia: <b>10% OFF</b> | Debito / Mercado Pago: precio de lista
+  Efectivo o transferencia: <b>10% OFF</b> | Mercado Pago: precio de lista
 </div>
 
 <div id="botonInstalar" onclick="instalarApp()" style="margin:0 20px 10px;background:var(--purple);border-radius:10px;padding:10px 14px;font-size:15px;color:#fff;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
@@ -266,7 +266,7 @@
       <div style="display:flex;gap:6px;margin-bottom:4px;">
         <button type="button" id="pagoEfectivo" onclick="setFormaPago('EFECTIVO')" style="flex:1;padding:10px 4px;border-radius:10px;border:1px solid var(--purple);background:var(--purple);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Efectivo</button>
         <button type="button" id="pagoTransferencia" onclick="setFormaPago('TRANSFERENCIA')" style="flex:1;padding:10px 4px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;">Transferencia</button>
-        <button type="button" id="pagoDebito" onclick="setFormaPago('DEBITO')" style="flex:1;padding:10px 4px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;">Debito</button>
+        
         <button type="button" id="pagoMercadoPago" onclick="setFormaPago('MERCADOPAGO')" style="flex:1;padding:10px 4px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;">Mercado Pago</button>
       </div>
       <div id="avisoComboDebito" style="display:none;background:#fdecea;border:1px solid #f3b8b0;color:#9c2b1f;font-size:13px;padding:8px 10px;border-radius:8px;">
@@ -867,7 +867,7 @@ function resolverItemCarrito(key){
 }
 
 function esPagoSinDescuento(fp){
-  return fp === 'DEBITO' || fp === 'MERCADOPAGO';
+  return fp === 'MERCADOPAGO';
 }
 
 function calcularTotales(){
@@ -892,8 +892,8 @@ function setFormaPago(fp){
   document.getElementById('pagoEfectivo').style.color = fp === 'EFECTIVO' ? '#fff' : 'var(--text)';
   document.getElementById('pagoTransferencia').style.background = fp === 'TRANSFERENCIA' ? 'var(--purple)' : '#fff';
   document.getElementById('pagoTransferencia').style.color = fp === 'TRANSFERENCIA' ? '#fff' : 'var(--text)';
-  document.getElementById('pagoDebito').style.background = fp === 'DEBITO' ? 'var(--purple)' : '#fff';
-  document.getElementById('pagoDebito').style.color = fp === 'DEBITO' ? '#fff' : 'var(--text)';
+  
+  
   document.getElementById('pagoMercadoPago').style.background = fp === 'MERCADOPAGO' ? 'var(--purple)' : '#fff';
   document.getElementById('pagoMercadoPago').style.color = fp === 'MERCADOPAGO' ? '#fff' : 'var(--text)';
   document.getElementById('datosTransferencia').style.display = fp === 'TRANSFERENCIA' ? 'block' : 'none';
