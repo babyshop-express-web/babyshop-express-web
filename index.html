@@ -206,7 +206,7 @@
 
 <div class="greeting">Hola. Que necesitas hoy?</div>
 <div style="margin:0 20px 10px;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;padding:8px 12px;font-size:15px;color:#1b5e20;">
-  Efectivo o transferencia: <b>10% OFF</b> | Debito: precio de lista
+  Efectivo o transferencia: <b>10% OFF</b> | Debito / Mercado Pago: precio de lista
 </div>
 
 <div id="botonInstalar" onclick="instalarApp()" style="margin:0 20px 10px;background:var(--purple);border-radius:10px;padding:10px 14px;font-size:15px;color:#fff;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
@@ -267,6 +267,7 @@
         <button type="button" id="pagoEfectivo" onclick="setFormaPago('EFECTIVO')" style="flex:1;padding:10px 4px;border-radius:10px;border:1px solid var(--purple);background:var(--purple);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">Efectivo</button>
         <button type="button" id="pagoTransferencia" onclick="setFormaPago('TRANSFERENCIA')" style="flex:1;padding:10px 4px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;">Transferencia</button>
         <button type="button" id="pagoDebito" onclick="setFormaPago('DEBITO')" style="flex:1;padding:10px 4px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;">Debito</button>
+        <button type="button" id="pagoMercadoPago" onclick="setFormaPago('MERCADOPAGO')" style="flex:1;padding:10px 4px;border-radius:10px;border:1px solid var(--border);background:#fff;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;">Mercado Pago</button>
       </div>
       <div id="avisoComboDebito" style="display:none;background:#fdecea;border:1px solid #f3b8b0;color:#9c2b1f;font-size:13px;padding:8px 10px;border-radius:8px;">
         Las promos semanales solo estan disponibles pagando en efectivo o transferencia. Sacalas del carrito o cambia la forma de pago.
@@ -280,6 +281,10 @@
           <input type="file" id="inpComprobanteCheckout" accept="image/*" onchange="manejarComprobanteCheckout(this)" style="width:100%;font-size:12px;">
           <div id="comprobanteCheckoutStatus" style="font-size:12px;margin-top:6px;"></div>
         </div>
+      </div>
+      <div id="datosMercadoPago" style="display:none;background:#f3eef7;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);">
+        <img src="/mercadopago-logo.png" alt="Mercado Pago" style="height:22px;margin-bottom:8px;display:block;">
+        Al confirmar el pedido te vamos a redirigir a Mercado Pago para que completes el pago (tarjeta, dinero en cuenta, etc.) de forma segura. Cuando termines, volves automaticamente a la app.
       </div>
       <input type="text" id="inpNombre" placeholder="Nombre y apellido">
       <input type="text" id="inpTelefono" placeholder="Telefono / WhatsApp">
@@ -512,6 +517,35 @@ updateBadge();
 
 apiGet('getCatalogo').then(onCatalogoLoaded).catch(onError);
 apiGet('getCombos').then(onCombosLoaded).catch(function(e){ console.error(e); });
+
+// Si volvemos de Mercado Pago (?pedido=XXXX&mp=success/pending/failure),
+// mostramos directamente el seguimiento de ese pedido con el estado real
+// (lo que diga la hoja PEDIDOS_WEB, no lo que diga la URL).
+function revisarVueltaDeMercadoPago(){
+  const params = new URLSearchParams(window.location.search);
+  const idPedido = params.get('pedido');
+  const mp = params.get('mp');
+  if(!idPedido) return;
+
+  if(mp === 'failure'){
+    showToast('El pago no se pudo completar. Podes reintentar desde tu carrito.');
+  } else if(mp === 'pending'){
+    showToast('Tu pago esta pendiente de confirmacion.');
+  } else if(mp === 'success'){
+    showToast('Pago realizado. Confirmando tu pedido...');
+  }
+
+  abrirSeguimiento();
+  document.getElementById('inpBuscarPedido').value = idPedido;
+  consultarPedidoUI();
+
+  // Limpiamos los parametros de la URL para que un refresh no vuelva a
+  // abrir el seguimiento ni muestre el toast de nuevo.
+  if(window.history && window.history.replaceState){
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+}
+revisarVueltaDeMercadoPago();
 
 function onCombosLoaded(data){
   combos = data;
@@ -773,7 +807,7 @@ function mostrarCrossSell(codigoOrigen){
     img +
     '<div>' +
     '<div style="font-size:14px;font-weight:600;">TE FALTAN TOALLITAS?</div>' +
-    '<div style="font-size:13px;color:var(--text-secondary);">' + sugerido.nombre + ' - ' + formatPrice(formaPago === 'DEBITO' ? sugerido.precioLista : sugerido.precioEfectivo) + '</div>' +
+    '<div style="font-size:13px;color:var(--text-secondary);">' + sugerido.nombre + ' - ' + formatPrice(esPagoSinDescuento(formaPago) ? sugerido.precioLista : sugerido.precioEfectivo) + '</div>' +
     '</div></div>' +
     '<div style="display:flex;gap:8px;">' +
     '<button onclick="addToCart(\'' + sugerido.codigo + '\');cerrarCrossSell();" style="flex:1;background:#2e7d32;color:#fff;border:none;border-radius:8px;padding:8px;font-size:14px;font-weight:600;cursor:pointer;">Si, sumar</button>' +
@@ -828,8 +862,12 @@ function resolverItemCarrito(key){
   }
   const p = productos.filter(function(x){ return x.codigo === key; })[0];
   if(!p) return null;
-  const precio = formaPago === 'DEBITO' ? p.precioLista : p.precioEfectivo;
+  const precio = esPagoSinDescuento(formaPago) ? p.precioLista : p.precioEfectivo;
   return { nombre: p.nombre, precio: precio, foto: p.foto };
+}
+
+function esPagoSinDescuento(fp){
+  return fp === 'DEBITO' || fp === 'MERCADOPAGO';
 }
 
 function calcularTotales(){
@@ -841,7 +879,7 @@ function calcularTotales(){
   });
   const envio = calcularEnvio(subtotal);
   const total = subtotal + envio;
-  const hayComboConDebito = formaPago === 'DEBITO' && claves.some(function(k){ return k.indexOf('COMBO_') === 0; });
+  const hayComboConDebito = esPagoSinDescuento(formaPago) && claves.some(function(k){ return k.indexOf('COMBO_') === 0; });
   return { claves: claves, subtotal: subtotal, envio: envio, total: total, hayComboConDebito: hayComboConDebito };
 }
 
@@ -856,7 +894,10 @@ function setFormaPago(fp){
   document.getElementById('pagoTransferencia').style.color = fp === 'TRANSFERENCIA' ? '#fff' : 'var(--text)';
   document.getElementById('pagoDebito').style.background = fp === 'DEBITO' ? 'var(--purple)' : '#fff';
   document.getElementById('pagoDebito').style.color = fp === 'DEBITO' ? '#fff' : 'var(--text)';
+  document.getElementById('pagoMercadoPago').style.background = fp === 'MERCADOPAGO' ? 'var(--purple)' : '#fff';
+  document.getElementById('pagoMercadoPago').style.color = fp === 'MERCADOPAGO' ? '#fff' : 'var(--text)';
   document.getElementById('datosTransferencia').style.display = fp === 'TRANSFERENCIA' ? 'block' : 'none';
+  document.getElementById('datosMercadoPago').style.display = fp === 'MERCADOPAGO' ? 'block' : 'none';
   renderCheckoutSummary();
 }
 
@@ -1031,6 +1072,26 @@ function finalizarPedido(){
   const btn = document.getElementById('btnConfirmarPedido');
   if(btn){ btn.disabled = true; btn.innerText = 'Enviando...'; btn.style.opacity = '0.6'; }
 
+  if(formaPago === 'MERCADOPAGO'){
+    showToast('Te llevamos a Mercado Pago...');
+    apiPost('iniciarPagoMP', { pedido: pedido })
+      .then(function(res){
+        if(!res || !res.ok || !res.initPoint){
+          throw new Error((res && res.error) || 'No se pudo iniciar el pago');
+        }
+        cart = {};
+        updateBadge();
+        window.location.href = res.initPoint;
+      })
+      .catch(function(err){
+        showToast('No se pudo iniciar el pago con Mercado Pago. Proba de nuevo.');
+        console.error(err);
+        const btnRetry = document.getElementById('btnConfirmarPedido');
+        if(btnRetry){ btnRetry.disabled = false; btnRetry.innerText = 'Confirmar pedido'; btnRetry.style.opacity = '1'; }
+      });
+    return;
+  }
+
   showToast('Enviando pedido...');
   apiPost('registrarPedido', { pedido: pedido })
     .then(function(res){
@@ -1165,4 +1226,3 @@ if(esAppInstalada()){
 
 </body>
 </html>
-
