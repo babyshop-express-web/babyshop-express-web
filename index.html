@@ -208,7 +208,7 @@
 <div style="margin:0 20px 10px;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;padding:8px 12px;font-size:15px;color:#1b5e20;">
   Efectivo o transferencia: <b>10% OFF</b> | Mercado Pago: precio de lista
 </div>
-<div id="bannerPromo" style="display:none;margin:0 20px 10px;background:linear-gradient(135deg,#e91e63,#c2185b);border-radius:10px;padding:10px 12px;font-size:15px;color:#fff;font-weight:700;text-align:center;line-height:1.3;"></div>
+<div id="bannerPromo" style="display:none;margin:0 20px 8px;background:#c2185b;border-radius:8px;padding:5px 10px;font-size:13px;color:#fff;font-weight:700;text-align:center;line-height:1.25;"></div>
 
 <div id="botonInstalar" onclick="instalarApp()" style="margin:0 20px 10px;background:var(--purple);border-radius:10px;padding:10px 14px;font-size:15px;color:#fff;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
   <span>Instala la app en tu celular</span>
@@ -584,7 +584,7 @@ function onError(err){
 }
 
 function onCatalogoLoaded(data){
-  try{ var _pr=data.filter(function(x){return x.promo;}); var _bp=document.getElementById("bannerPromo"); if(_bp && _pr.length){ _bp.innerHTML="&#127873; "+_pr[0].promo.pct+"% OFF llevando "+_pr[0].promo.min+" o mas unidades del mismo producto <span style=\"font-weight:400;font-size:13px;display:block;\">En los productos con el cartel rosa. Efectivo, transferencia o debito.</span>"; _bp.style.display="block"; } }catch(e){}
+  try{ var _pr=data.filter(function(x){return x.promo;}); var _bp=document.getElementById("bannerPromo"); if(_bp && _pr.length){ _bp.innerHTML="&#127873; "+_pr[0].promo.pct+"% OFF llevando "+_pr[0].promo.min+" o mas iguales (productos con cartel rosa)"; _bp.style.display="block"; } }catch(e){}
   productos = data.sort(function(a, b){
   // Los productos en promo van primero dentro de su categoria; despues, orden alfabetico.
   const pa = a.promo ? 0 : 1, pb = b.promo ? 0 : 1;
