@@ -584,7 +584,7 @@ function onError(err){
 }
 
 function onCatalogoLoaded(data){
-  try{ var _pr=data.filter(function(x){return x.promo;}); var _bp=document.getElementById("bannerPromo"); if(_bp && _pr.length){ _bp.innerHTML="&#127873; "+_pr[0].promo.pct+"% OFF llevando "+_pr[0].promo.min+" o mas iguales (productos con cartel rosa)"; _bp.style.display="block"; } }catch(e){}
+  try{ var _pr=data.filter(function(x){return x.promo;}); var _bp=document.getElementById("bannerPromo"); if(_bp && _pr.length){ _bp.innerHTML="&#127873; "+_pr[0].promo.pct+"% OFF llevando "+_pr[0].promo.min+" o m&aacute;s en productos seleccionados"; _bp.style.display="block"; } }catch(e){}
   productos = data.sort(function(a, b){
   // Los productos en promo van primero dentro de su categoria; despues, orden alfabetico.
   const pa = a.promo ? 0 : 1, pb = b.promo ? 0 : 1;
