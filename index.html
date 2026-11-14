@@ -583,7 +583,12 @@ function onError(err){
 }
 
 function onCatalogoLoaded(data){
-  productos = data.sort(function(a, b){ return a.nombre.localeCompare(b.nombre, 'es'); });
+  productos = data.sort(function(a, b){
+  // Los productos en promo van primero dentro de su categoria; despues, orden alfabetico.
+  const pa = a.promo ? 0 : 1, pb = b.promo ? 0 : 1;
+  if(pa !== pb) return pa - pb;
+  return a.nombre.localeCompare(b.nombre, 'es');
+});
   categorias = [];
   const vistas = {};
   productos.forEach(function(p){
@@ -762,14 +767,18 @@ function productCardHtml(p){
     badge = '<div style="position:absolute;top:6px;left:6px;background:linear-gradient(135deg,#fb8c00,#e65100);color:#fff;font-size:10px;font-weight:800;padding:4px 8px;border-radius:20px;box-shadow:0 2px 6px rgba(230,81,0,0.5);display:flex;align-items:center;gap:3px;">🔥 ULTIMAS 2 UNIDADES</div>';
   }
 
-  return '<div class="product-card" style="position:relative;">' +
+  if(p.promo){
+  badge += '<div style="position:absolute;top:6px;right:6px;z-index:2;background:linear-gradient(135deg,#e91e63,#c2185b);color:#fff;font-size:11px;font-weight:800;padding:5px 9px;border-radius:20px;box-shadow:0 2px 8px rgba(194,24,91,0.45);text-align:center;line-height:1.1;letter-spacing:0.3px;">' + p.promo.min + ' x ' + p.promo.pct + '% OFF</div>';
+}
+
+return '<div class="product-card" style="position:relative;">' +
     badge +
     '<div class="product-img">' + img + '</div>' +
     '<div class="product-name">' + p.nombre + '</div>' +
     '<div class="product-footer">' +
     '<div><span class="product-price">' + formatPrice(p.precioLista) + '</span>' +
     (conDescuento ? ('<div style="font-size:10px;color:#2e7d32;font-weight:600;">' + formatPrice(p.precioEfectivo) + ' efvo/transf</div>') : '') +
-(p.promo ? ('<div style="font-size:10px;color:#c62828;font-weight:700;">' + p.promo.min + ' o mas: ' + p.promo.pct + '% OFF</div>') : '') +
+(p.promo ? ('<div style="font-size:10px;color:#c2185b;font-weight:800;">Llevando ' + p.promo.min + ' o mas: ' + formatPrice(Math.round(p.precioLista * (100 - p.promo.pct) / 100)) + ' c/u</div>') : '') +
     '</div>' +
     '<button class="add-btn" id="add-' + p.codigo + '" onclick="addToCart(\'' + p.codigo + '\')">+</button>' +
     '</div></div>';
