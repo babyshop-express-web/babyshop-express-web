@@ -769,6 +769,7 @@ function productCardHtml(p){
     '<div class="product-footer">' +
     '<div><span class="product-price">' + formatPrice(p.precioLista) + '</span>' +
     (conDescuento ? ('<div style="font-size:10px;color:#2e7d32;font-weight:600;">' + formatPrice(p.precioEfectivo) + ' efvo/transf</div>') : '') +
+(p.promo ? ('<div style="font-size:10px;color:#c62828;font-weight:700;">' + p.promo.min + ' o mas: ' + p.promo.pct + '% OFF</div>') : '') +
     '</div>' +
     '<button class="add-btn" id="add-' + p.codigo + '" onclick="addToCart(\'' + p.codigo + '\')">+</button>' +
     '</div></div>';
@@ -862,8 +863,22 @@ function resolverItemCarrito(key){
   }
   const p = productos.filter(function(x){ return x.codigo === key; })[0];
   if(!p) return null;
-  const precio = esPagoSinDescuento(formaPago) ? p.precioLista : p.precioEfectivo;
-  return { nombre: p.nombre, precio: precio, foto: p.foto };
+  const qty = cart[key] || 0;
+  let precio = esPagoSinDescuento(formaPago) ? p.precioLista : p.precioEfectivo;
+  let promoMsg = '';
+  if(p.promo){
+    const conPromo = Math.round(p.precioLista * (100 - p.promo.pct) / 100);
+    if(esPagoSinDescuento(formaPago)){
+      promoMsg = 'Con efectivo, transferencia o debito: ' + p.promo.pct + '% OFF llevando ' + p.promo.min + ' o mas';
+    } else if(qty >= p.promo.min){
+      if(conPromo < precio) precio = conPromo;
+      promoMsg = 'PROMO ACTIVA: ' + p.promo.pct + '% OFF';
+    } else {
+      const faltan = p.promo.min - qty;
+      promoMsg = 'Suma ' + faltan + ' mas y pagas ' + p.promo.pct + '% menos (' + formatPrice(conPromo) + ' c/u)';
+    }
+  }
+  return { nombre: p.nombre, precio: precio, foto: p.foto, promoMsg: promoMsg };
 }
 
 function esPagoSinDescuento(fp){
@@ -954,6 +969,7 @@ function renderCart(){
       '<div class="cart-item-info">' +
       '<div class="cart-item-name">' + item.nombre + '</div>' +
       '<div class="cart-item-price">' + formatPrice(item.precio) + ' c/u</div>' +
+(item.promoMsg ? ('<div style="font-size:11px;color:#c62828;font-weight:700;margin-top:2px;">' + item.promoMsg + '</div>') : '') +
       '<div onclick="quitarDelCarrito(\'' + key + '\')" style="font-size:11px;color:#9c2b1f;text-decoration:underline;cursor:pointer;margin-top:4px;">Quitar</div>' +
       '</div>' +
       '<div class="qty-controls">' +
