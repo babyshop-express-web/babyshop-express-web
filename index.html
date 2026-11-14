@@ -205,10 +205,11 @@
 </header>
 
 <div class="greeting">Hola. Que necesitas hoy?</div>
+<div id="bannerPromo" onclick="mostrarPromos()" style="display:none;cursor:pointer;margin:0 20px 8px;background:#c2185b;border-radius:8px;padding:6px 10px;font-size:13px;color:#fff;font-weight:700;text-align:center;line-height:1.25;"></div>
 <div style="margin:0 20px 10px;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;padding:8px 12px;font-size:15px;color:#1b5e20;">
   Efectivo o transferencia: <b>10% OFF</b> | Mercado Pago: precio de lista
 </div>
-<div id="bannerPromo" style="display:none;margin:0 20px 8px;background:#c2185b;border-radius:8px;padding:5px 10px;font-size:13px;color:#fff;font-weight:700;text-align:center;line-height:1.25;"></div>
+
 
 <div id="botonInstalar" onclick="instalarApp()" style="margin:0 20px 10px;background:var(--purple);border-radius:10px;padding:10px 14px;font-size:15px;color:#fff;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
   <span>Instala la app en tu celular</span>
@@ -584,7 +585,8 @@ function onError(err){
 }
 
 function onCatalogoLoaded(data){
-  try{ var _pr=data.filter(function(x){return x.promo;}); var _bp=document.getElementById("bannerPromo"); if(_bp && _pr.length){ _bp.innerHTML="&#127873; "+_pr[0].promo.pct+"% OFF llevando "+_pr[0].promo.min+" o m&aacute;s en productos seleccionados"; _bp.style.display="block"; } }catch(e){}
+  data.forEach(function(x){ if(x.promo && x.stockBadge){ x.promo=null; } }); // con menos de 3 unidades sale de la promo
+  try{ var _pr=data.filter(function(x){return x.promo;}); var _bp=document.getElementById("bannerPromo"); if(_bp && _pr.length){ _bp.innerHTML="&#127873; "+_pr[0].promo.pct+"% OFF llevando "+_pr[0].promo.min+" o m&aacute;s en productos seleccionados &rsaquo;"; _bp.style.display="block"; } }catch(e){}
   productos = data.sort(function(a, b){
   // Los productos en promo van primero dentro de su categoria; despues, orden alfabetico.
   const pa = a.promo ? 0 : 1, pb = b.promo ? 0 : 1;
@@ -750,6 +752,21 @@ function irAHome(){
   document.getElementById('seguimientoOverlay').style.display = 'none';
   document.getElementById('confirmOverlay').style.display = 'none';
   window.scrollTo(0, 0);
+}
+
+function mostrarPromos(){
+  categoriaActiva = '__PROMOS__';
+  marcaActiva = null;
+  const wrap = document.getElementById('categoryProductsWrap');
+  const items = productos.filter(function(x){ return x.promo; }).sort(function(a,b){ return (a.categoria||'').localeCompare(b.categoria||'','es') || a.nombre.localeCompare(b.nombre,'es'); });
+  const pr = items.length ? items[0].promo : null;
+  wrap.innerHTML =
+    '<div class="section-title">&#127873; ' + (pr ? pr.pct + '% OFF llevando ' + pr.min + ' o m&aacute;s' : 'Promo') +
+    '<span onclick="hideCategory()" style="float:right;font-size:14px;color:var(--purple);cursor:pointer;">Cerrar</span></div>' +
+    '<div class="category-products active">' +
+    (items.map(productCardHtml).join('') || '<div class="empty">Por ahora no hay productos en promo.</div>') +
+    '</div>';
+  wrap.scrollIntoView({behavior:'smooth'});
 }
 
 function hideCategory(){
