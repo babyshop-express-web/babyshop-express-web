@@ -110,6 +110,7 @@
   .promo-row{gap:8px;padding:4px 20px 12px;}
   #indispensablesRow .product-card,#combosRow .product-card{width:132px;min-width:132px;max-width:132px;padding:8px;gap:6px;}
   #indispensablesRow .product-img,#combosRow .product-img{margin-bottom:2px;}
+  #indispensablesRow .product-footer div div,#combosRow .product-footer div div{font-size:10px !important;line-height:1.2;}
   #indispensablesRow .product-name,#combosRow .product-name{flex:none;font-size:12px;line-height:1.3;min-height:47px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
   .talle-chip{flex-shrink:0;min-width:46px;height:34px;padding:0 10px;border-radius:17px;border:2px solid var(--border);background:#fff;font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;}
   .talle-chip.activo{background:var(--purple);border-color:var(--purple);color:#fff;}
@@ -1133,7 +1134,12 @@ function sugerenciasEnvioHtml(t){
   const falta = UMBRAL_ENVIO_GRATIS - t.subtotal;
   const precioDe = function(p){ return esPagoSinDescuento(formaPago) ? p.precioLista : p.precioEfectivo; };
   // Si falta poco, sugerimos toallitas/perfumeria/leches; si falta mucho, tambien pañales
-  const base = productos.filter(function(p){ return p.foto && !cart[p.codigo] && (p.categoria !== 'PAÑALES' || falta > 12000); });
+  // Pañales solo si falta mucho y el cliente eligio su talle (para no sugerir un talle equivocado)
+  const base = productos.filter(function(p){
+    if(!p.foto || cart[p.codigo]) return false;
+    if(p.categoria !== 'PAÑALES') return true;
+    return falta > 12000 && talleActivo && detectarTalle(p.nombre) === talleActivo;
+  });
   const alcanzan = base.filter(function(p){ return precioDe(p) >= falta && precioDe(p) <= falta + 9000; });
   let elegidos;
   if(alcanzan.length >= 3){
