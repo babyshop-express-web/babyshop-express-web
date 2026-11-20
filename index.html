@@ -107,6 +107,13 @@
   .featured-row .product-img img{width:100%;height:100%;object-fit:cover;}
   .featured-row .product-footer{flex-direction:row;align-items:center;justify-content:space-between;}
   .product-name{text-transform:uppercase;}
+  .promo-row{gap:8px;padding:4px 20px 12px;}
+  .promo-card{width:104px;min-width:104px;flex-shrink:0;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:6px;}
+  .promo-img{width:100%;aspect-ratio:1/1;border-radius:8px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .promo-img img{width:100%;height:100%;object-fit:contain;}
+  .promo-foot{display:flex;align-items:center;justify-content:space-between;margin-top:5px;gap:4px;}
+  .promo-price{font-size:12px;font-weight:800;color:#c2185b;}
+  .promo-foot .promo-add{width:auto;min-width:34px;height:26px;padding:0 8px;border-radius:13px;font-size:12px;font-weight:800;line-height:26px;}
 
   .categories{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 20px 16px;}
   .category-card{
@@ -205,20 +212,11 @@
 </header>
 
 <div class="greeting" style="padding:12px 0 0;"></div>
-<div id="bannerPromo" onclick="mostrarPromos()" style="display:none;cursor:pointer;margin:0 20px 8px;background:#c2185b;border-radius:8px;padding:6px 10px;font-size:13px;color:#fff;font-weight:700;text-align:center;line-height:1.25;"></div>
+<div class="section-title" id="promoRowTitle" style="display:none;color:#c2185b;"></div>
+<div class="featured-row promo-row" id="promoRow"></div>
+
 <div style="margin:0 20px 10px;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;padding:8px 12px;font-size:15px;color:#1b5e20;">
   Efectivo o transferencia: <b>10% OFF</b> | Mercado Pago: precio de lista
-</div>
-
-
-<div id="botonInstalar" onclick="instalarApp()" style="margin:0 20px 10px;background:var(--purple);border-radius:10px;padding:10px 14px;font-size:15px;color:#fff;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
-  <span>Instala la app en tu celular</span>
-  <span style="font-size:18px;">→</span>
-</div>
-
-<div style="padding:0 20px 14px;">
-  <input type="text" id="searchInput" oninput="buscarProductos(this.value)" placeholder="Buscar producto..."
-    style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:20px;font-size:15px;background:#fff;">
 </div>
 
 <div class="section-title" id="combosTitle" style="display:none;">Promos semanales</div>
@@ -229,6 +227,16 @@
 
 <div class="section-title">Categorias</div>
 <div class="categories" id="categoriesGrid"></div>
+
+<div id="botonInstalar" onclick="instalarApp()" style="margin:0 20px 10px;background:var(--purple);border-radius:10px;padding:10px 14px;font-size:15px;color:#fff;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
+  <span>Instala la app en tu celular</span>
+  <span style="font-size:18px;">→</span>
+</div>
+
+<div style="padding:0 20px 14px;">
+  <input type="text" id="searchInput" oninput="buscarProductos(this.value)" placeholder="Buscar producto..."
+    style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:20px;font-size:15px;background:#fff;">
+</div>
 
 <div id="categoryProductsWrap"></div>
 
@@ -586,7 +594,6 @@ function onError(err){
 
 function onCatalogoLoaded(data){
   data.forEach(function(x){ if(x.promo && x.stockBadge){ x.promo=null; } }); // con menos de 3 unidades sale de la promo
-  try{ var _pr=data.filter(function(x){return x.promo;}); var _bp=document.getElementById("bannerPromo"); if(_bp && _pr.length){ _bp.innerHTML="&#127873; "+_pr[0].promo.pct+"% OFF llevando "+_pr[0].promo.min+" o m&aacute;s en productos seleccionados &rsaquo;"; _bp.style.display="block"; } }catch(e){}
   productos = data.sort(function(a, b){
   // Los productos en promo van primero dentro de su categoria; despues, orden alfabetico.
   const pa = a.promo ? 0 : 1, pb = b.promo ? 0 : 1;
@@ -611,6 +618,7 @@ function onCatalogoLoaded(data){
 
   renderCategories();
   renderIndispensables();
+  try{ renderPromoRow(); }catch(e){ console.error(e); }
   avisarCarritoRecuperado();
 }
 
@@ -629,6 +637,36 @@ function avisarCarritoRecuperado(){
 
   const referencia = document.querySelector('.greeting');
   referencia.parentNode.insertBefore(aviso, referencia.nextSibling);
+}
+
+function renderPromoRow(){
+  const items = productos.filter(function(x){ return x.promo; });
+  const titulo = document.getElementById('promoRowTitle');
+  const fila = document.getElementById('promoRow');
+  if(items.length === 0){ titulo.style.display = 'none'; fila.innerHTML = ''; return; }
+  const pr = items[0].promo;
+  const mezclados = items.slice().sort(function(){ return Math.random() - 0.5; });
+  titulo.innerHTML = '&#127873; ' + pr.pct + '% OFF llevando ' + pr.min + ' o m&aacute;s' +
+    '<span onclick="mostrarPromos()" style="float:right;font-size:14px;color:var(--purple);cursor:pointer;text-transform:none;">Ver todos &rsaquo;</span>';
+  titulo.style.display = 'block';
+  fila.innerHTML = mezclados.map(function(p){
+    const img = p.foto ? ('<img src="' + p.foto + '" alt="">') : '<span style="font-size:11px;">Sin foto</span>';
+    const precioPromo = Math.round(p.precioLista * (100 - p.promo.pct) / 100);
+    return '<div class="promo-card">' +
+      '<div class="promo-img" onclick="mostrarPromos()">' + img + '</div>' +
+      '<div class="promo-foot">' +
+      '<span class="promo-price">' + formatPrice(precioPromo) + '</span>' +
+      '<button class="add-btn promo-add" onclick="addPromoToCart(\'' + p.codigo + '\',' + (p.promo.min || 3) + ')">x' + (p.promo.min || 3) + '</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function addPromoToCart(codigo, cantidad){
+  cart[codigo] = (cart[codigo] || 0) + cantidad;
+  updateBadge();
+  showToast('Agregaste ' + cantidad + ' unidades con precio promo');
+  const p = productos.filter(function(x){ return x.codigo === codigo; })[0];
+  if(p && p.categoria === 'PAÑALES'){ mostrarCrossSell(codigo); }
 }
 
 function renderIndispensables(){
