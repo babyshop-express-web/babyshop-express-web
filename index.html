@@ -110,7 +110,7 @@
   .promo-row{gap:8px;padding:4px 20px 12px;}
   #categoriesGrid.categories{grid-template-columns:repeat(4,1fr);gap:8px;}
   #categoriesGrid .category-card{flex-direction:column;justify-content:center;gap:6px;padding:10px 4px;text-align:center;border-radius:14px;}
-  #categoriesGrid .cat-icon{width:40px;height:40px;}
+  #categoriesGrid .cat-icon{width:54px;height:54px;}
   #categoriesGrid .cat-label{flex:none;font-size:11px;font-weight:700;letter-spacing:0.2px;}
   #indispensablesRow .product-card,#combosRow .product-card{width:132px;min-width:132px;max-width:132px;padding:8px;gap:6px;}
   #indispensablesRow .product-img,#combosRow .product-img{margin-bottom:2px;}
@@ -702,16 +702,21 @@ function renderIndispensables(){
 }
 
 const CAT_ICONS = {
-  'PAÑALES': 'https://lh3.googleusercontent.com/d/11Ijkhdkjv3JXfi4Ht_vGgF3Gd7BrIqS_',
-  'LECHES': 'https://lh3.googleusercontent.com/d/1hCeZSAqqfNF-CbJRVgUZ84u9wuavhfW_',
-  'TOALLITAS HUMEDAS': 'https://lh3.googleusercontent.com/d/1bwmyePvc92OEHdN2Sbu1BAYJxfbmGydd',
-  'PERFUMERIA': 'https://lh3.googleusercontent.com/d/1YTFEMBNGEYb4QJ1fC83DB4tw_P8ePlRy'
+  'PAÑALES': '/icono-panales.png',
+  'TOALLITAS HUMEDAS': '/icono-toallitas.png',
+  'LECHES': '/icono-leches.png',
+  'PERFUMERIA': '/icono-perfumeria.png'
 };
+const CAT_ORDEN = ['PAÑALES', 'TOALLITAS HUMEDAS', 'LECHES', 'PERFUMERIA'];
 
 function renderCategories(){
   const grid = document.getElementById('categoriesGrid');
-  grid.innerHTML = categorias.map(function(cat){
-    const icono = CAT_ICONS[cat] ? ('<img src="' + CAT_ICONS[cat] + '" style="width:38px;height:38px;object-fit:contain;">') : '*';
+  const ordenadas = categorias.slice().sort(function(a, b){
+    const ia = CAT_ORDEN.indexOf(a), ib = CAT_ORDEN.indexOf(b);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  });
+  grid.innerHTML = ordenadas.map(function(cat){
+    const icono = CAT_ICONS[cat] ? ('<img src="' + CAT_ICONS[cat] + '" style="width:54px;height:54px;object-fit:contain;">') : '*';
     return '<div class="category-card" onclick="showCategory(\'' + cat.replace(/'/g, "\\'") + '\')">' +
       '<div class="cat-icon">' + icono + '</div>' +
       '<span class="cat-label">' + (CAT_LABELS[cat] || titleCase(cat)) + '</span>' +
