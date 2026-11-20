@@ -108,6 +108,15 @@
   .featured-row .product-footer{flex-direction:row;align-items:center;justify-content:space-between;}
   .product-name{text-transform:uppercase;}
   .promo-row{gap:8px;padding:4px 20px 12px;}
+  #indispensablesRow .product-card,#combosRow .product-card{width:132px;min-width:132px;max-width:132px;padding:8px;gap:6px;}
+  #indispensablesRow .product-img,#combosRow .product-img{margin-bottom:2px;}
+  #indispensablesRow .product-name,#combosRow .product-name{flex:none;font-size:12px;line-height:1.3;min-height:47px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+  .talle-chip{flex-shrink:0;min-width:46px;height:34px;padding:0 10px;border-radius:17px;border:2px solid var(--border);background:#fff;font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .talle-chip.activo{background:var(--purple);border-color:var(--purple);color:#fff;}
+  .sug-card{width:96px;min-width:96px;flex-shrink:0;background:#fff;border:1px solid var(--border);border-radius:10px;padding:5px;text-align:center;}
+  .sug-card img{width:100%;aspect-ratio:1/1;object-fit:contain;border-radius:6px;}
+  .sug-name{font-size:10px;line-height:1.2;height:24px;overflow:hidden;margin:3px 0;color:var(--text);}
+  .sug-add{width:100%;border:none;border-radius:12px;background:#2e7d32;color:#fff;font-size:12px;font-weight:800;padding:5px 2px;cursor:pointer;}
   .promo-card{width:122px;min-width:122px;flex-shrink:0;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:6px;}
   .promo-img{width:100%;aspect-ratio:1/1;border-radius:8px;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;}
   .promo-img img{width:100%;height:100%;object-fit:contain;}
@@ -203,7 +212,9 @@
 
 <div id="appWrap">
 <header>
-  <div style="width:22px;"></div>
+  <div onclick="irABuscar()" style="width:26px;cursor:pointer;" title="Buscar">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+  </div>
   <img src="https://lh3.googleusercontent.com/d/1k-w66xDH3rVUCZK9oM1PHmqV1DtdRehU" style="height:46px;cursor:pointer;" onclick="irAHome()">
   <div class="cart-icon" onclick="openCart()">
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
@@ -669,9 +680,13 @@ function addPromoToCart(codigo, cantidad){
 }
 
 function renderIndispensables(){
-  const candidatos = productos.filter(function(p){
+  let candidatos = productos.filter(function(p){
     return p.categoria === 'PAÑALES' || p.categoria === 'TOALLITAS HUMEDAS';
   });
+  if(talleActivo){
+    const deSuTalle = candidatos.filter(function(p){ return p.categoria !== 'PAÑALES' || detectarTalle(p.nombre) === talleActivo; });
+    if(deSuTalle.filter(function(p){ return p.categoria === 'PAÑALES'; }).length >= 2) candidatos = deSuTalle;
+  }
   if(candidatos.length === 0) return;
 
   const mezclados = candidatos.slice().sort(function(){ return Math.random() - 0.5; });
@@ -733,6 +748,46 @@ const MARCA_LOGOS = {
 };
 let marcaActiva = null;
 
+// ---- MI TALLE (se guarda en el celular del cliente) ----
+const TALLES = ['RN','P','M','G','XG','XXG','XXXG','JUNIOR'];
+let talleActivo = null;
+try{ talleActivo = localStorage.getItem('babyshop_mi_talle') || null; }catch(e){ talleActivo = null; }
+
+function detectarTalle(nombre){
+  const t = ' ' + String(nombre || '').toUpperCase().replace(/Ñ/g,'N').replace(/[^A-Z0-9+ ]/g,' ') + ' ';
+  const reglas = [
+    [/ JUNIOR /,'JUNIOR'], [/ XXXG /,'XXXG'], [/ (XXG|XXGDE) /,'XXG'], [/ (XG|XGD|XGDE|EXG) /,'XG'],
+    [/ (G|GDE|GRANDE) /,'G'], [/ (M|MED|MEDIANO) /,'M'], [/ (P|PEQ|PEQUENO) /,'P'],
+    [/ (RN\+|RN|RECIEN NACIDO|PREMATUROS) /,'RN']
+  ];
+  for(let i = 0; i < reglas.length; i++){ if(reglas[i][0].test(t)) return reglas[i][1]; }
+  return null;
+}
+
+function setTalle(t){
+  talleActivo = (talleActivo === t) ? null : t;
+  try{
+    if(talleActivo) localStorage.setItem('babyshop_mi_talle', talleActivo);
+    else localStorage.removeItem('babyshop_mi_talle');
+  }catch(e){}
+  renderProductosCategoria();
+}
+
+function filtroTallesHtml(){
+  const disponibles = TALLES.filter(function(t){
+    return productos.some(function(p){ return p.categoria === 'PAÑALES' && detectarTalle(p.nombre) === t; });
+  });
+  if(disponibles.length === 0) return '';
+  return '<div style="padding:0 20px 4px;font-size:13px;font-weight:700;color:var(--purple-dark);">' +
+    (talleActivo ? ('Tu talle: ' + talleActivo + ' <span onclick="setTalle(\'' + talleActivo + '\')" style="font-weight:400;color:var(--purple);text-decoration:underline;cursor:pointer;margin-left:6px;">ver todos</span>') : 'Elegi tu talle') +
+    '</div>' +
+    '<div style="display:flex;gap:6px;overflow-x:auto;padding:4px 20px 10px;">' +
+    disponibles.map(function(t){
+      return '<div class="talle-chip' + (talleActivo === t ? ' activo' : '') + '" onclick="setTalle(\'' + t + '\')">' + t + '</div>';
+    }).join('') +
+    '</div>';
+}
+
 function showCategory(cat){
   categoriaActiva = cat;
   marcaActiva = null;
@@ -764,12 +819,21 @@ function renderProductosCategoria(){
     }
   }
 
+  let filtroTalles = '';
+  if(cat === 'PAÑALES'){
+    filtroTalles = filtroTallesHtml();
+    if(talleActivo){
+      items = items.filter(function(p){ return detectarTalle(p.nombre) === talleActivo; });
+    }
+  }
+
   wrap.innerHTML =
     '<div class="section-title">' + (CAT_LABELS[cat] || titleCase(cat)) +
     '<span onclick="hideCategory()" style="float:right;font-size:14px;color:var(--purple);cursor:pointer;">Cerrar</span></div>' +
+    filtroTalles +
     filtroMarcas +
     '<div class="category-products active">' +
-    (items.map(productCardHtml).join('') || '<div class="empty">No hay productos en esta categoria todavia.</div>') +
+    (items.map(productCardHtml).join('') || '<div class="empty">' + ((talleActivo && cat === 'PAÑALES') ? 'No hay productos de esa marca en tu talle.' : 'No hay productos en esta categoria todavia.') + '</div>') +
     '</div>';
   wrap.scrollIntoView({behavior:'smooth'});
 }
@@ -777,6 +841,14 @@ function renderProductosCategoria(){
 function setMarca(m){
   marcaActiva = (marcaActiva === m) ? null : m;
   renderProductosCategoria();
+}
+
+function irABuscar(){
+  closeCart();
+  const inp = document.getElementById('searchInput');
+  if(!inp) return;
+  inp.scrollIntoView({behavior:'smooth', block:'center'});
+  setTimeout(function(){ inp.focus(); }, 350);
 }
 
 function irAHome(){
@@ -941,6 +1013,7 @@ function resolverItemCarrito(key){
     } else {
       const faltan = p.promo.min - qty;
       promoMsg = 'Suma ' + faltan + ' mas y pagas ' + p.promo.pct + '% menos (' + formatPrice(conPromo) + ' c/u)';
+      return { nombre: p.nombre, precio: precio, foto: p.foto, promoMsg: promoMsg, promoFaltan: faltan };
     }
   }
   return { nombre: p.nombre, precio: precio, foto: p.foto, promoMsg: promoMsg };
@@ -1034,7 +1107,8 @@ function renderCart(){
       '<div class="cart-item-info">' +
       '<div class="cart-item-name">' + item.nombre + '</div>' +
       '<div class="cart-item-price">' + formatPrice(item.precio) + ' c/u</div>' +
-(item.promoMsg ? ('<div style="font-size:11px;color:#c62828;font-weight:700;margin-top:2px;">' + item.promoMsg + '</div>') : '') +
+(item.promoMsg ? ('<div style="font-size:12px;color:#2e7d32;font-weight:700;margin-top:2px;">' + item.promoMsg + '</div>') : '') +
+(item.promoFaltan ? ('<button onclick="changeQty(\'' + key + '\', ' + item.promoFaltan + ')" style="margin-top:5px;background:#2e7d32;color:#fff;border:none;border-radius:14px;padding:5px 12px;font-size:12px;font-weight:800;cursor:pointer;">Agregar ' + item.promoFaltan + ' mas</button>') : '') +
       '<div onclick="quitarDelCarrito(\'' + key + '\')" style="font-size:11px;color:#9c2b1f;text-decoration:underline;cursor:pointer;margin-top:4px;">Quitar</div>' +
       '</div>' +
       '<div class="qty-controls">' +
@@ -1046,10 +1120,47 @@ function renderCart(){
 
   summary.innerHTML =
     cartelEnvioHtml(t) +
+    sugerenciasEnvioHtml(t) +
     '<div class="summary-row"><span>Subtotal</span><span>' + formatPrice(t.subtotal) + '</span></div>' +
     '<div class="summary-row"><span>Envio</span><span>' + (t.envio === 0 ? 'GRATIS' : formatPrice(t.envio)) + '</span></div>' +
     '<div class="summary-total"><span>Total</span><span>' + formatPrice(t.total) + '</span></div>' +
     '<button class="checkout-btn" onclick="abrirCheckout()">Finalizar pedido</button>';
+}
+
+// Sugiere productos que alcanzan para llegar al envio gratis
+function sugerenciasEnvioHtml(t){
+  if(t.envio === 0) return '';
+  const falta = UMBRAL_ENVIO_GRATIS - t.subtotal;
+  const precioDe = function(p){ return esPagoSinDescuento(formaPago) ? p.precioLista : p.precioEfectivo; };
+  // Si falta poco, sugerimos toallitas/perfumeria/leches; si falta mucho, tambien pañales
+  const base = productos.filter(function(p){ return p.foto && !cart[p.codigo] && (p.categoria !== 'PAÑALES' || falta > 12000); });
+  const alcanzan = base.filter(function(p){ return precioDe(p) >= falta && precioDe(p) <= falta + 9000; });
+  let elegidos;
+  if(alcanzan.length >= 3){
+    elegidos = alcanzan.sort(function(){ return Math.random() - 0.5; }).slice(0, 6);
+  } else {
+    elegidos = base.filter(function(p){ return precioDe(p) >= falta; })
+      .sort(function(a, b){ return precioDe(a) - precioDe(b); }).slice(0, 6);
+  }
+  if(elegidos.length === 0) return '';
+  return '<div style="margin:-2px 0 12px;">' +
+    '<div style="font-size:13px;font-weight:700;color:var(--purple-dark);margin-bottom:6px;">Suma uno de estos y tenes envio gratis</div>' +
+    '<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;">' +
+    elegidos.map(function(p){
+      return '<div class="sug-card">' +
+        '<img src="' + p.foto + '" alt="">' +
+        '<div class="sug-name">' + p.nombre + '</div>' +
+        '<button class="sug-add" onclick="agregarSugerido(\'' + p.codigo + '\')">+ ' + formatPrice(precioDe(p)) + '</button>' +
+        '</div>';
+    }).join('') +
+    '</div></div>';
+}
+
+function agregarSugerido(codigo){
+  cart[codigo] = (cart[codigo] || 0) + 1;
+  updateBadge();
+  renderCart();
+  showToast('Agregado al carrito');
 }
 
 function cartelEnvioHtml(t){
