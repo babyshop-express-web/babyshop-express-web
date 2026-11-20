@@ -1142,24 +1142,26 @@ function sugerenciasEnvioHtml(t){
   if(t.envio === 0) return '';
   const falta = UMBRAL_ENVIO_GRATIS - t.subtotal;
   const precioDe = function(p){ return esPagoSinDescuento(formaPago) ? p.precioLista : p.precioEfectivo; };
-  // Si falta poco, sugerimos toallitas/perfumeria/leches; si falta mucho, tambien pañales
-  // Pañales solo si falta mucho y el cliente eligio su talle (para no sugerir un talle equivocado)
+  // Solo toallitas y perfumeria: sirven para cualquier bebe (leche y pañales dependen de edad/talle)
+  const CATS_SUGERENCIA = ['TOALLITAS HUMEDAS', 'PERFUMERIA'];
   const base = productos.filter(function(p){
-    if(!p.foto || cart[p.codigo]) return false;
-    if(p.categoria !== 'PAÑALES') return true;
-    return falta > 12000 && talleActivo && detectarTalle(p.nombre) === talleActivo;
+    return p.foto && !cart[p.codigo] && CATS_SUGERENCIA.indexOf(p.categoria) > -1;
   });
-  const alcanzan = base.filter(function(p){ return precioDe(p) >= falta && precioDe(p) <= falta + 9000; });
-  let elegidos;
-  if(alcanzan.length >= 3){
-    elegidos = alcanzan.sort(function(){ return Math.random() - 0.5; }).slice(0, 6);
+  if(base.length === 0) return '';
+  const mezclar = function(a){ return a.slice().sort(function(){ return Math.random() - 0.5; }); };
+  const alcanzan = base.filter(function(p){ return precioDe(p) >= falta; });
+  let elegidos, titulo;
+  if(alcanzan.length > 0){
+    // Primero los que alcanzan sin pasarse mucho
+    const justos = alcanzan.filter(function(p){ return precioDe(p) <= falta + 9000; });
+    elegidos = (justos.length >= 3 ? mezclar(justos) : alcanzan.sort(function(a, b){ return precioDe(a) - precioDe(b); })).slice(0, 6);
+    titulo = 'Suma uno de estos y tenes envio gratis';
   } else {
-    elegidos = base.filter(function(p){ return precioDe(p) >= falta; })
-      .sort(function(a, b){ return precioDe(a) - precioDe(b); }).slice(0, 6);
+    elegidos = mezclar(base).slice(0, 6);
+    titulo = 'Suma algo de esto y te acercas al envio gratis';
   }
-  if(elegidos.length === 0) return '';
   return '<div style="margin:-2px 0 12px;">' +
-    '<div style="font-size:13px;font-weight:700;color:var(--purple-dark);margin-bottom:6px;">Suma uno de estos y tenes envio gratis</div>' +
+    '<div style="font-size:13px;font-weight:700;color:var(--purple-dark);margin-bottom:6px;">' + titulo + '</div>' +
     '<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;">' +
     elegidos.map(function(p){
       return '<div class="sug-card">' +
